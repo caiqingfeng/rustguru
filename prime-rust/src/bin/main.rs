@@ -50,14 +50,17 @@ fn main() {
         matches.push(pm.clone());
     }
 
-    let sys_time = SystemTime::now();
+    let begin_at = SystemTime::now();
     for mm in matches.iter_mut() {
         pokermatch::process_match(mm);
     }
 
-    let difference = sys_time.duration_since(sys_time)
+    let difference = SystemTime::now().duration_since(begin_at)
                     .expect("Clock may have gone backwards");
-    println!("{:?} ms", difference.as_millis());
+    let in_ms = difference.as_secs() * 1000 +
+                    difference.subsec_nanos() as u64 / 1_000_000;
+        
+    println!("{:?} ms", in_ms);
     println!("hands:{}", m.matches.len());
 
     let mut i=0;
