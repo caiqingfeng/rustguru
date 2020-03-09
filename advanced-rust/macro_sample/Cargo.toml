@@ -9,3 +9,6 @@ edition = "2018"
 [dependencies]
 hello_macro = { path = "../hello_macro" }
 hello_macro_derive = { path = "../hello_macro/hello_macro_derive" }
+
+[dependencies.sp-debug-derive]
+git = 'https://github.com/paritytech/substrate.git'
