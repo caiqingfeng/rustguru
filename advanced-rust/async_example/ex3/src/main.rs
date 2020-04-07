@@ -91,7 +91,6 @@ mod future {
     }
 
     pub fn ready<T: std::fmt::Debug>(val: T) -> Ready<T> {
-        println!("inside ready...{:?}", val);
         Ready(Some(val))
     }
     pub struct Map<Fut, F> {
@@ -110,7 +109,6 @@ mod future {
             match self.future.poll(cx) {
                 Poll::Ready(val) => {
                     let f = self.f.take().unwrap();
-                    println!("inside map.poll");
                     Poll::Ready(f(val))
                 }
                 Poll::Pending => Poll::Pending,
@@ -133,7 +131,6 @@ mod future {
             match self.future.poll(cx) {
                 Poll::Ready(val) => {
                     let f = self.f.take().unwrap();
-                    println!("inside then.poll");
                     f(val).poll(cx)
                 }
                 Poll::Pending => Poll::Pending,
@@ -146,7 +143,9 @@ use crate::future::*;
 
 fn main() {
     let my_future2 = future::ready(1)
-        .map(|v| {println!("inside map.closure");v+1})
-        .then(|v| {println!("inside then.closure");future::ready(v+1)});
+        .map(|v| v+1)
+        .then(|v| future::ready(v+1))
+        .map(|v| v+4)
+        .then(|v| future::ready(v+1));
     println!("Output: {}", block_on(my_future2));
 }
