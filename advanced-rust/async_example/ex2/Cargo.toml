@@ -1,5 +1,5 @@
 [package]
-name = "async_example"
+name = "ex2"
 version = "0.1.0"
 authors = ["caiqingfeng <caiqingfeng@roadclouding.com>"]
 edition = "2018"
@@ -9,5 +9,4 @@ edition = "2018"
 [dependencies]
 futures = "*"
 tokio-core="*"
-
-
+chrono="*"
