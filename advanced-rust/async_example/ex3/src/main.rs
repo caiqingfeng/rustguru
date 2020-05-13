@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::fmt::Debug;
+use std::thread;
 
 thread_local!(static NOTIFY: RefCell<bool> = RefCell::new(true));
 
@@ -8,9 +9,11 @@ fn block_on<F>(mut f: F) -> F::Output
         F: Future,
 {
     NOTIFY.with(|n| loop {
+        println!("before loop, {:?}", thread::current().id());
         if *n.borrow() {
             *n.borrow_mut() = false;
             let ctx = Context::from_waker(&Waker);
+            println!("before polling");
             if let Poll::Ready(val) = f.poll(&ctx) {
                 return val;
             }
@@ -72,6 +75,7 @@ mod future {
                 Fut: Future,
                 Self: Sized,
         {
+            println!("inside then, {:?}", std::thread::current().id());
             Then {
                 future: self,
                 f: Some(f),
@@ -82,15 +86,18 @@ mod future {
     }
     pub struct Ready<T>(Option<T>);
 
-    impl<T> Future for Ready<T> {
+    impl<T> Future for Ready<T>
+    {
         type Output = T;
 
-        fn poll(&mut self, _: &Context) -> Poll<Self::Output> {
+        fn poll(&mut self, _: &Context) -> Poll<Self::Output>
+        {
             Poll::Ready(self.0.take().unwrap())
         }
     }
 
     pub fn ready<T: std::fmt::Debug>(val: T) -> Ready<T> {
+        println!("ready for {:?}", val);
         Ready(Some(val))
     }
     pub struct Map<Fut, F> {
@@ -105,7 +112,8 @@ mod future {
     {
         type Output = T;
 
-        fn poll(&mut self, cx: &Context) -> Poll<T> {
+        fn poll(&mut self, cx: &Context) -> Poll<T>
+        {
             match self.future.poll(cx) {
                 Poll::Ready(val) => {
                     let f = self.f.take().unwrap();
@@ -128,13 +136,16 @@ mod future {
         type Output = NextFut::Output;
 
         fn poll(&mut self, cx: &Context) -> Poll<Self::Output> {
-            match self.future.poll(cx) {
+            println!(" then.poll triggered, {:?}", std::thread::current().id());
+            let x = match self.future.poll(cx) {
                 Poll::Ready(val) => {
                     let f = self.f.take().unwrap();
                     f(val).poll(cx)
                 }
                 Poll::Pending => Poll::Pending,
-            }
+            };
+            println!(" after then closure triggered, {:?}", std::thread::current().id());
+            x
         }
     }
 }
@@ -143,9 +154,10 @@ use crate::future::*;
 
 fn main() {
     let my_future2 = future::ready(1)
-        .map(|v| v+1)
-        .then(|v| future::ready(v+1))
+        .map(|v| {println!("map closure, {}", v); v+1})
+        .then(|v| {println!("then closure, {}", v); future::ready(v+1)})
         .map(|v| v+4)
+        .map(|v| v+14)
         .then(|v| future::ready(v+1));
     println!("Output: {}", block_on(my_future2));
 }
