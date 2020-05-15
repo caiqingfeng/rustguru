@@ -25,4 +25,8 @@ fn main() {
 
     let z: Result<u32, u32> = Err(13);
     assert_eq!(z.map_err(stringify), Err("error code: 13".to_string()));
+
+    let r: Result<Option<u32>, &str> = Ok(Some(3));
+    assert_eq!(r.map(|i| i).unwrap(), Some(3));
+
 }
